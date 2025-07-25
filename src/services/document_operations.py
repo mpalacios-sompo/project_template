@@ -119,6 +119,89 @@ class DocumentOperations:
             raise RuntimeError(f"Failed to access response content: {e}") from e
         
 
+    def semantic_search(
+        self,
+        query: str,
+        document_ids: list[str],
+        search_index_name: str = "default_semantic_search_index",
+        search_index_version: int = 3,
+        embedding_deployment_name: str = "text-embedding-3-large-dev-shared",
+        embedding_model: str = "text-embedding-3-large",
+        vector_dimensions: int = 3072,
+        k_nearest_neighbors: int = 3,
+        threshold: float = 0.3,
+        skip: int = 0,
+        take: int = 5
+    ) -> dict:
+        """
+        Perform a semantic search on specified documents using vector embeddings.
+
+        Args:
+            search_index_name (str): Name of the search index.
+            search_index_version (str): Version of the search index.
+            embedding_deployment_name (str): Name of the embedding deployment.
+            embedding_model (str): Name of the embedding model.
+            vector_dimensions (int): Dimension of the embedding vectors.
+            query (str): Search query.
+            document_ids (list[str]): List of document IDs to search within.
+            k_nearest_neighbors (int, optional): Number of nearest neighbors to return. Defaults to 3.
+            threshold (float, optional): Similarity threshold. Defaults to 0.3.
+            skip (int, optional): Number of results to skip. Defaults to 0.
+            take (int, optional): Number of results to return. Defaults to 5.
+
+        Returns:
+            dict: Parsed JSON response from the semantic search API.
+
+        Raises:
+            requests.HTTPError: If the API call fails with a non-success status code.
+            requests.ConnectionError: If the network connection fails.
+            requests.Timeout: If the request times out.
+            ValueError: If the response content is not valid JSON.
+        """
+        url = f"{self.base_url}/semantic-search/api/{self.client}/indexes/{search_index_name}/search?indexVersion={search_index_version}"
+
+        headers = {
+            **self.headers,
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "documentIds": document_ids,
+            "query": query,
+            "embeddingDeploymentName": embedding_deployment_name,
+            "embeddingModel": embedding_model,
+            "vectorDimensions": vector_dimensions,
+            "searchParams": {
+                "type": "RegularSearchParameters",
+                "contentVectorSearchParams": {
+                    "kNearestNeighborsCount": k_nearest_neighbors,
+                    "exhaustive": True,
+                    "threshold": threshold,
+                },
+            },
+            "skip": skip,
+            "take": take,
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=payload)
+        except requests.ConnectionError as e:
+            raise requests.ConnectionError("Connection error during semantic search") from e
+        except requests.Timeout as e:
+            raise requests.Timeout("Request timed out during semantic search") from e
+
+        try:
+            response.raise_for_status()
+        except requests.HTTPError as e:
+            raise requests.HTTPError(f"HTTP error during semantic search: {e.response.status_code} - {e.response.text}") from e
+
+        try:
+            return response.json()
+        except ValueError as e:
+            raise ValueError("Response content is not valid JSON") from e
+
+            
+
     @staticmethod
     def extract_text_from_pdf(pdf_bytes: bytes) -> str:
         """
