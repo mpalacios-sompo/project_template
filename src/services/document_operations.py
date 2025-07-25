@@ -285,6 +285,10 @@ class DocumentOperations:
         except Exception as e:
             raise RuntimeError(f"Failed to extract paginated PDF text: {e}") from e
 
+        
+        
+
+
 
 
 
