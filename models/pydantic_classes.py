@@ -7,4 +7,4 @@ class Capital(BaseModel):
     country: str = Field(description="The country to which the city belongs")
 
 class Response(BaseModel):
-    responses: List[Capital]
+    response: List[Capital]
