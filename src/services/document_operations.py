@@ -1,10 +1,10 @@
 from src.utils.document_processing_api import DocumentAPIClient
-from src.utils.pdf_text_extractor import PDFTextExtractor
+from src.utils.pdf_processor import PDFProcessor
 
 class DocumentOperations:
     def __init__(self, base_url: str, client: str, api_key: str):
         self.api = DocumentAPIClient(base_url, client, api_key)
-        self.extractor = PDFTextExtractor()
+        self.extractor = PDFProcessor()
 
     def upload_doc(self, file_path, **kwargs):
         return self.api.upload_document(file_path, **kwargs)
@@ -21,3 +21,5 @@ class DocumentOperations:
     def extract_text_json(self, pdf_bytes):
         return self.extractor.extract_text_json(pdf_bytes)
 
+    def extract_tables(self, pdf_bytes):
+        return self.extractor.extract_tables(pdf_bytes)

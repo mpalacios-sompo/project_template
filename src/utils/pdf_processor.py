@@ -1,8 +1,9 @@
 import json
+import pdfplumber
 from PyPDF2 import PdfReader
 from io import BytesIO
 
-class PDFTextExtractor:
+class PDFProcessor:
 
     @staticmethod
     def extract_text(pdf_bytes: bytes) -> str:
@@ -86,3 +87,45 @@ class PDFTextExtractor:
 
         except Exception as e:
             raise RuntimeError(f"Failed to extract paginated PDF text: {e}") from e
+        
+    
+    @staticmethod
+    def extract_tables(pdf_bytes: bytes) -> list:
+        """
+        Extract tables from a PDF byte stream.
+
+        Args:
+            pdf_bytes (bytes): Raw PDF content as bytes.
+
+        Returns:
+            list: List of tables, each table is a list of rows (which are lists of strings).
+
+        Raises:
+            ValueError: If no PDF bytes are provided or the PDF has no pages.
+            RuntimeError: If table extraction fails.
+        """
+        if not pdf_bytes:
+            raise ValueError("No PDF bytes provided.")
+
+        try:
+            tables = []
+            with pdfplumber.open(BytesIO(pdf_bytes)) as pdf:
+                if not pdf.pages:
+                    raise ValueError("No pages found in the PDF.")
+
+                for page_num, page in enumerate(pdf.pages, start=1):
+                    try:
+                        page_tables = page.extract_tables()
+                        for table in page_tables:
+                            if table:  # Filter out empty tables
+                                tables.append({
+                                    "page_number": page_num,
+                                    "table": table
+                                })
+                    except Exception as page_error:
+                        raise RuntimeError(f"Failed to extract tables from page {page_num}: {page_error}") from page_error
+
+            return tables
+
+        except Exception as e:
+            raise RuntimeError(f"Failed to extract tables from PDF: {e}") from e
