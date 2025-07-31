@@ -5,80 +5,97 @@ config:
   layout: dagre
 ---
 classDiagram
+  direction TB
+
+  %% Namespaces for logical grouping
+  namespace AI {
     class AIProcessor {
-        -GPTClient gpt
-        -EmbeddingClient embedder
-        +generate_completion(*args, **kwargs)
-        +generate_embeddings(*args, **kwargs)
-    }
-    class DocumentOperations {
-        -DocumentAPIClient api
-        -PDFProcessor pdf
-        -ExcelProcessor excel
-        +upload_doc(file_path, **kwargs)
-        +get_doc(id, **kwargs)
-        +semantic_search(query, document_ids, **kwargs)
-        +extract_text(pdf_bytes)
-        +extract_text_json(pdf_bytes)
-        +extract_tables(pdf_bytes)
-        +load_workbook_from_bytes(excel_bytes)
-        +extract_sheet_names(workbook)
-        +get_sheet(workbook, sheet_name)
-        +extract_sheet_data(sheet)
-        +convert_sheet_to_dataframe(sheet)
+      <<Service>>
+      - gpt : GPTClient
+      - embedder : EmbeddingClient
+      + generate_completion()
+      + generate_embeddings()
     }
     class GPTClient {
-        -str base_url
-        -str api_key
-        -str client
-        +generate_response(...)
-        +_build_prompt(pydantic_schema)
-        +_get_llm_client(...)
+      <<Utility>>
+      - base_url : str
+      - api_key : str
+      + generate_response(...)
+      + _build_prompt(pydantic_schema)
+      + _get_llm_client()
     }
     class EmbeddingClient {
-        -str base_url
-        -str api_key
-        -str client
-        +get_embeddings(input_text, model, dimensions)
-        +_get_embedding_client()
+      <<Utility>>
+      - base_url : str
+      - api_key : str
+      + get_embeddings(input_text, model, dimensions)
+      + _get_embedding_client()
     }
     class AzureChatOpenAI
     class AzureOpenAIEmbeddings
     class PydanticOutputParser
     class ChatPromptTemplate
+  }
+
+  namespace Document {
+    class DocumentOperations {
+      <<Service>>
+      - api : DocumentAPIClient
+      - pdf : PDFProcessor
+      - excel : ExcelProcessor
+      + upload_doc(file_path)
+      + get_doc(id)
+      + semantic_search(query, document_ids)
+      + extract_text(pdf_bytes)
+      + extract_tables(pdf_bytes)
+      + load_workbook_from_bytes(excel_bytes)
+      + extract_sheet_names(workbook)
+      + extract_sheet_data(sheet)
+      + convert_sheet_to_dataframe(sheet)
+    }
     class DocumentAPIClient {
-        -base_url
-        -client
-        -api_key
-        -headers
-        +upload_document(...)
-        +get_document(document_id)
-        +semantic_search(query, document_ids, ...)
+      <<Utility>>
+      - base_url
+      - api_key
+      + upload_document(...)
+      + get_document(document_id)
+      + semantic_search(query, document_ids)
     }
     class PDFProcessor {
-        +extract_text(pdf_bytes)
-        +extract_text_json(pdf_bytes)
-        +extract_tables(pdf_bytes)
+      <<Utility>>
+      + extract_text(pdf_bytes)
+      + extract_text_json(pdf_bytes)
+      + extract_tables(pdf_bytes)
     }
     class ExcelProcessor {
-        +load_workbook_from_bytes(excel_bytes)
-        +extract_sheet_names(workbook)
-        +get_sheet(workbook, sheet_name)
-        +extract_sheet_data(sheet)
-        +convert_sheet_to_dataframe(sheet)
+      <<Utility>>
+      + load_workbook_from_bytes(excel_bytes)
+      + extract_sheet_names(workbook)
+      + get_sheet(workbook, sheet_name)
+      + extract_sheet_data(sheet)
+      + convert_sheet_to_dataframe(sheet)
     }
     class Workbook
     class Worksheet
-    class pd.DataFrame
-    AIProcessor --> GPTClient : uses
-    AIProcessor --> EmbeddingClient : uses
-    GPTClient --> AzureChatOpenAI : initializes
-    GPTClient --> PydanticOutputParser : uses
-    GPTClient --> ChatPromptTemplate : builds
-    EmbeddingClient --> AzureOpenAIEmbeddings : initializes
-    DocumentOperations --> DocumentAPIClient : uses
-    DocumentOperations --> PDFProcessor : uses
-    DocumentOperations --> ExcelProcessor : uses
-    ExcelProcessor --> Workbook : returns
-    ExcelProcessor --> Worksheet : returns
-    ExcelProcessor --> pd.DataFrame : returns
+    class pdDataFrame["pd.DataFrame"]
+  }
+
+  %% AI Dependencies
+  AIProcessor --> GPTClient : uses
+  AIProcessor --> EmbeddingClient : uses
+  GPTClient --> AzureChatOpenAI : initializes
+  GPTClient --> PydanticOutputParser : uses
+  GPTClient --> ChatPromptTemplate : builds
+  EmbeddingClient --> AzureOpenAIEmbeddings : initializes
+
+  %% Document dependencies
+  DocumentOperations --> DocumentAPIClient : uses
+  DocumentOperations --> PDFProcessor : uses
+  DocumentOperations --> ExcelProcessor : uses
+  ExcelProcessor --> Workbook : returns
+  ExcelProcessor --> Worksheet : returns
+  ExcelProcessor --> pdDataFrame : returns
+
+  %% Notes for Core Classes
+  note for AIProcessor "Orchestrates GPT and Embedding model interactions"
+  note for DocumentOperations "Coordinates all document ingest and extraction"
