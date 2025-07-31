@@ -20,7 +20,7 @@ classDiagram
       <<Utility>>
       - base_url : str
       - api_key : str
-      + generate_response(...)
+      + generate_response(system_prompt, user_prompt)
       + _build_prompt(pydantic_schema)
       + _get_llm_client()
     }
@@ -55,9 +55,10 @@ classDiagram
     }
     class DocumentAPIClient {
       <<Utility>>
-      - base_url
-      - api_key
-      + upload_document(...)
+      - base_url: str
+      - api_key: str
+      - client: str
+      + upload_document(file_path, document_id, document_path, ttl)
       + get_document(document_id)
       + semantic_search(query, document_ids)
     }
