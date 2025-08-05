@@ -31,10 +31,21 @@ classDiagram
       + get_embeddings(input_text, model, dimensions)
       + _get_embedding_client()
     }
-    class AzureChatOpenAI
-    class AzureOpenAIEmbeddings
-    class PydanticOutputParser
-    class ChatPromptTemplate
+    class AgentClient {
+      <<Utility>>
+      - base_url : str
+      - api_key : str
+      - client: str
+      + create_agent(agent_name, description, instructions, agent_kind, prompt_template)
+      + list_agents()
+      + update_agent(agent_name, description, instructions, agent_kind, prompt_template)
+      + delete_agent(agent_name, agent_kind)
+      + create_agent_group(agent_group_name, orchestrator_instructions, selection_instructions, result_quality_control_instruction, agents)
+      + list_agent_groups()
+      + update_agent_group(agent_group_name, orchestrator_instruction, selection_instructions, result_quality_control_instruction, agents)
+      + delete_agent_group(agent_group_name)
+      + execute_agent(handler_name, user_message, agent_kind)
+    }
   }
 
   namespace Document {
@@ -76,27 +87,32 @@ classDiagram
       + extract_sheet_data(sheet)
       + convert_sheet_to_dataframe(sheet)
     }
-    class Workbook
-    class Worksheet
-    class pdDataFrame["pd.DataFrame"]
   }
+
+  %% Independent Classes
+  class APIClient {
+      <<Utility>>
+        - base_url: str
+        - headers: dict
+        + get(path, params, headers)
+        + post(path, data, json, files, headers)
+        - _full_url(path)
+        - _handle_response(response)
+    }
 
   %% AI Dependencies
   AIProcessor --> GPTClient : uses
   AIProcessor --> EmbeddingClient : uses
-  GPTClient --> AzureChatOpenAI : initializes
-  GPTClient --> PydanticOutputParser : uses
-  GPTClient --> ChatPromptTemplate : builds
-  EmbeddingClient --> AzureOpenAIEmbeddings : initializes
+  AIProcessor --> AgentClient : uses
+  AgentClient --> APIClient : uses
 
   %% Document dependencies
   DocumentOperations --> DocumentAPIClient : uses
   DocumentOperations --> PDFProcessor : uses
   DocumentOperations --> ExcelProcessor : uses
-  ExcelProcessor --> Workbook : returns
-  ExcelProcessor --> Worksheet : returns
-  ExcelProcessor --> pdDataFrame : returns
+  DocumentAPIClient --> APIClient : uses
 
   %% Notes for Core Classes
-  note for AIProcessor "Orchestrates GPT and Embedding model interactions"
+  note for AIProcessor "Orchestrates AI model interactions"
   note for DocumentOperations "Coordinates all document ingest and extraction"
+

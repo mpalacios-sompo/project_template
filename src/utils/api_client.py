@@ -116,3 +116,19 @@ class APIClient:
             raise requests.ConnectionError("Connection error during POST request") from e
         except requests.Timeout as e:
             raise requests.Timeout("Timeout during POST request") from e
+        
+    def delete(self, path: str, headers: Optional[dict] = None) -> Any:
+        """
+        
+        """
+        try:
+            response = requests.delete(
+                self._full_url(path),
+                headers={**self.headers, **(headers or {})}
+            )
+            return self._handle_response(response)
+        except requests.ConnectionError as e:
+            raise requests.ConnectionError("Connection error during DELETE request") from e
+        except requests.Timeout as e:
+            raise requests.Timeout("Timeout during DELETE request") from e
+
